@@ -1,4 +1,4 @@
-# Structures for searching partitions in GPT-disks (for Python 3)
+# Structures for searching partitions in GPT disks (for Python 3)
 # USAGE: see gpt_reader.py
 # 
 # Other GPT utilities https://github.com/DenisNovac/GPTUtils
@@ -22,7 +22,7 @@ class GptPartition( object ):
         # pass
 
     def info( self ):
-        print("\n-------------"+self.guid+" : "+self.unique_guid+"-------------")
+        print("\n-------------"+self.unique_guid+" : "+self.guid+"-------------")
         print("\n"+str(self.primary_offset)+":")
         print(self.primary_block.hex())
         print("\n"+str(self.secondary_offset)+":")
@@ -60,12 +60,13 @@ class GptHeader( object ):
         self.partition_table_offset=partition_table_offset
         pass
 
-    def calculate_checksum( self ):
+    def calculate_checksum( self, gpt_header ):
+        header_size=int.from_bytes(gpt_header[0x0C:0x0C+4],"little")
         # creation of gpt_header with zeroed checksum field
         gpt_header_zero_cs=[ ]
-        gpt_header_zero_cs.append(self.gpt_header[0:0x10])
+        gpt_header_zero_cs.append(gpt_header[0:0x10])
         gpt_header_zero_cs.append(bytes(bytearray(4)))
-        gpt_header_zero_cs.append(self.gpt_header[0x14:self.header_size])
+        gpt_header_zero_cs.append(gpt_header[0x14:header_size])
         gpt_header_zero_cs=b''.join(gpt_header_zero_cs)
         # checksum in big-endian
         checksum=zlib.crc32(gpt_header_zero_cs)
@@ -94,7 +95,7 @@ class GptHeader( object ):
         print("Partition table offset: "+str(self.partition_table_offset))
         print("Partition table checksum: "+self.entries_checksum.hex())
 
-        print("\nCalculated header checksum: "+self.calculate_checksum().hex())
+        print("\nCalculated header checksum: "+self.calculate_checksum(self.gpt_header).hex())
         print("Calculated partition table checksum: "+
             self.calculate_partition_table_checksum(self.partition_table).hex())
 

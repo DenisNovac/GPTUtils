@@ -1,4 +1,4 @@
-# Program for searching partitions in GPT-disks (for Python 3)
+# Program for searching partitions in GPT disks (for Python 3)
 # USAGE: sudo python3 gpt_reader.py DISK_PATH(/dev/sdX)
 # 
 # Other GPT utilities https://github.com/DenisNovac/GPTUtils
@@ -15,8 +15,8 @@ from gpt_structures import GptPartition
 class GptReader( object ):
     DISK_PATH=None
     LBA_SIZE=512
-    # GPT_ENTRY_SIZE=128 # 128 must be correct for most of the disks
-    # Now it is calculated from header
+    # 128 bytes must be correct for most of the disks
+    # Or it can be replaced with header.entry_size
     GPT_ENTRY_SIZE=128
     # size of the disk
     DISK_SECTORS=0
@@ -158,8 +158,8 @@ class GptReader( object ):
                 # if not - creating object
                 if not known_partition:
                     partition=GptPartition()
-                    partition.guid=guid_string
-                    partition.unique_guid=unique_guid
+                    partition.guid=guid_string.upper()
+                    partition.unique_guid=unique_guid.upper()
                     self.PARTITIONS_LIST.update({unique_guid:partition})
                 # if it is inside PARTITION_LIST - work with it
                 if known_partition:
