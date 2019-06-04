@@ -24,7 +24,13 @@ class GptReader( object ):
     # {partition unique guid:partition object}
     PARTITIONS_LIST=dict()
 
-    def __init__( self, disk_path ):
+    # secret search will also search the end of partitions
+    # for guids such as gpt_secret_partitions does for
+    # hiding partitions
+    SEARCH_SECRET=False
+
+    def __init__( self, disk_path, search_secret ):
+        self.SEARCH_SECRET=search_secret
         self.DISK_PATH=disk_path
 
     # verifying gpt through signatures and Protective MBR test
@@ -150,6 +156,30 @@ class GptReader( object ):
             guid_string="-".join(guid)
             unique_guid=entry[16:32].hex()
 
+
+            is_secret=False
+            # search for gpt_secret_partition pertitions
+            if unique_guid=="0"*32 and self.SEARCH_SECRET:
+                secret_guid=entry[len(entry)-32:len(entry)-16]
+                secret_unique_guid=entry[len(entry)-16:len(entry)]
+                guid_first_part = secret_guid[0:8]
+
+                guid_last_part = secret_guid[8:16]
+                guid = []
+
+                guid.append(guid_first_part[0:4][::-1].hex())
+                guid.append(guid_first_part[4:6][::-1].hex())
+                guid.append(guid_first_part[6:8][::-1].hex())
+
+                guid.append(guid_last_part[0:2].hex())
+                guid.append(guid_last_part[2:8].hex())
+
+                guid_string="-".join(guid)
+                unique_guid=secret_unique_guid.hex()
+                if not unique_guid=="0"*32:
+                    is_secret=True
+
+
             # if there is an actual partition
             if not unique_guid == "0"*32:
                 partition=None
@@ -171,6 +201,8 @@ class GptReader( object ):
                 if not is_primary:
                     partition.secondary_block=entry
                     partition.secondary_offset=offset
+                if is_secret:
+                    partition.is_secret=True
             number=number+1
             offset=offset+self.GPT_ENTRY_SIZE
         
@@ -179,7 +211,7 @@ class GptReader( object ):
 def main( args ):
     reader = None
     try:
-        reader=GptReader(args[1])
+        reader=GptReader(args[1],False)
     except IndexError:
         print("USAGE: sudo python3 gpt_reader.py DISK_PATH(/dev/sdX)")
         exit(-1)

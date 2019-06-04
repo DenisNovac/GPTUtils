@@ -17,6 +17,8 @@ class GptPartition( object ):
     primary_offset=None
     secondary_offset=None
 
+    is_secret=False
+
     # initiates correctly through GptReader.append_partitions_list()
     # def __init__( self ):
         # pass

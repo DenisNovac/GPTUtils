@@ -1,5 +1,5 @@
 # Utility for hiding partititons in GPT disks (for Python 3)
-# USAGE: 
+# USAGE: sudo python gpt_secret_partition /dev/sdb
 # 
 # Other GPT utilities https://github.com/DenisNovac/GPTUtils
 # Documentation https://en.wikipedia.org/wiki/GUID_Partition_Table
@@ -14,16 +14,22 @@ from partition_type import PartitionType
 
 
 # hides partition from applications such as fdisk, gparted
-def hide_partition( disk_path, primary_header, secondary_header, partition ):
+# prevents them from mounting
+# only gpt_reader knows where to look to find hidden partitions
+def hide_partition( disk_path, primary_header, secondary_header, partition, hide ):
 
     # partitions entries are the same - we can use only one
     primary_block=partition.primary_block
-
+    
     # guids are the same in both blocks
     guids=primary_block[0:32]
     
     # can not use custom guids. It must be ZEROES to be passed
-    new_guids=bytes(bytearray(32))
+    new_guids=None
+    if hide:
+        new_guids=bytes(bytearray(32))
+    else:
+        new_guids=primary_block[len(partition.primary_block)-32:len(partition.primary_block)]
 
     # creating block with guids at the end
     new_block=new_guids+primary_block[32:len(primary_block)-32]+guids
@@ -80,16 +86,13 @@ def hide_partition( disk_path, primary_header, secondary_header, partition ):
     disk.write(new_partition_checksum)
 
     disk.close()
-    return None
 
 
 
-# first part of main is the same as gpt_reader.py
 def main( args ):
     reader = None
     try:
-        #reader=GptReader(args[1])
-        reader=GptReader("/dev/sdb")
+        reader=GptReader(args[1],True)
     except IndexError:
         print("USAGE: sudo python3 gpt_secret_partition.py DISK_PATH(/dev/sdX)")
         exit(-1)
@@ -105,16 +108,18 @@ def main( args ):
     reader.append_partitions_list( primary_header.partition_table, True )
     reader.append_partitions_list( secondary_header.partition_table, False)
     
+    # interactive interface
     while True:
-        print("\n\nDetected partitions: "+str(len(reader.PARTITIONS_LIST)))
+        print("\nDetected partitions: "+str(len(reader.PARTITIONS_LIST)))
         keys=list(reader.PARTITIONS_LIST.keys())
         number=1
         for k in keys:
             partition=reader.PARTITIONS_LIST.get(k)
             type=PartitionType.type(partition.guid)
-            print(str(number)+": "+partition.unique_guid+" "+partition.guid+" "+type)
+            print(str(number)+": "+partition.unique_guid+" "+partition.guid+" "+type+" "+str(partition.is_secret))
             number=number+1
 
+        # user choses partition to work with or exit
         choice=input("Choose partition (E for exit): ")
         if str(choice).upper()=='E':
             exit(0)
@@ -122,12 +127,23 @@ def main( args ):
         partition=reader.PARTITIONS_LIST.get(keys[choice-1])
         print("Partition info: ")
         partition.info()
-        print("WARNING. THERE IS NO UNHIDING FUNCTIONAL YET!")
+
+        # menu - hide or unhide partitions or exit
         choice=input("\nWhat to do: \n(H)Hide\n(U)Unhide\n(B)Back\n(E)Exit\n: ").upper()
         if choice=='B':
             continue
         if choice=='H':
-            hide_partition("/dev/sdb",primary_header,secondary_header,partition)
+            # if it is already hidden
+            if partition.is_secret:
+                print("\n\nERROR: YOU CAN NOT HIDE SECRET PARTITION")
+                continue
+            hide_partition(args[1],primary_header,secondary_header,partition,True)
+        if choice=='U':
+            # if it is already unhidden
+            if not partition.is_secret:
+                print("\n\nERROR: YOU CAN NOT UNHIDE NOT SECRET PARTITION")
+                continue
+            hide_partition(args[1],primary_header,secondary_header,partition,False)
         exit(0)
 
 
