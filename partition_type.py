@@ -37,5 +37,6 @@ class PartitionType(Enum):
     def type( partition_guid ):
         for e in PartitionType:
             if e.value == partition_guid:
-                return str(e)
+                # only output type, not class name
+                return str(e).split("PartitionType.",1)[1]
         return "Unknown"

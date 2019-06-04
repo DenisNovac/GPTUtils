@@ -156,7 +156,7 @@ class GptReader( object ):
             guid_string="-".join(guid)
             unique_guid=entry[16:32].hex()
 
-
+            # flag for founded secret partitions
             is_secret=False
             # search for gpt_secret_partition pertitions
             if unique_guid=="0"*32 and self.SEARCH_SECRET:

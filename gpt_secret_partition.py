@@ -116,7 +116,12 @@ def main( args ):
         for k in keys:
             partition=reader.PARTITIONS_LIST.get(k)
             type=PartitionType.type(partition.guid)
-            print(str(number)+": "+partition.unique_guid+" "+partition.guid+" "+type+" "+str(partition.is_secret))
+            secret=None
+            if partition.is_secret:
+                secret="Secret partition"
+            else:
+                secret=""
+            print(str(number)+": "+partition.unique_guid+" "+partition.guid+" "+type+" "+secret)
             number=number+1
 
         # user choses partition to work with or exit

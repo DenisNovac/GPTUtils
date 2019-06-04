@@ -17,6 +17,8 @@ class GptPartition( object ):
     primary_offset=None
     secondary_offset=None
 
+    # this is a flag for gpt_secret_partition partitions
+    # gpt_reader sets it if working in SEARCH_SECRET mode
     is_secret=False
 
     # initiates correctly through GptReader.append_partitions_list()
