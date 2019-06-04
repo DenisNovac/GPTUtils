@@ -1,10 +1,12 @@
 # Structures for searching partitions in GPT-disks (for Python 3)
-# USAGE: sudo python3 gpt_reader.py DISK_PATH(/dev/sdX)
+# USAGE: see gpt_reader.py
 # 
 # Other GPT utilities https://github.com/DenisNovac/GPTUtils
 # Documentation https://en.wikipedia.org/wiki/GUID_Partition_Table
 
 import zlib
+
+
 
 # structure for saving detected GPT partitions
 class GptPartition( object ):
@@ -15,8 +17,9 @@ class GptPartition( object ):
     primary_offset=None
     secondary_offset=None
 
-    def __init__( self ):
-        pass
+    # initiates correctly through GptReader.append_partitions_list()
+    # def __init__( self ):
+        # pass
 
     def info( self ):
         print("\n-------------"+self.guid+" : "+self.unique_guid+"-------------")
